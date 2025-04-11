@@ -15,6 +15,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   String message = "";
   bool isLoading = false;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
 
   void resetPassword() async {
     final email = emailCtrl.text.trim();
@@ -48,63 +50,141 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     if (res['success'] == true) {
-      // Nếu thành công, quay lại màn hình đăng nhập
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Đặt lại mật khẩu thành công")),
+        const SnackBar(content: Text("Đặt lại mật khẩu thành công")),
       );
       Navigator.pop(context);
     }
   }
 
+  Widget buildInput({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+    bool obscure = false,
+    VoidCallback? toggleVisibility,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        suffixIcon: isPassword
+            ? IconButton(
+          icon: Icon(
+            obscure ? Icons.visibility_off : Icons.visibility,
+          ),
+          onPressed: toggleVisibility,
+        )
+            : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Đặt lại mật khẩu")),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: emailCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email),
+      backgroundColor: Colors.white,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.lock_reset, size: 72, color: Colors.teal),
+              const SizedBox(height: 12),
+              const Text(
+                "Đặt lại mật khẩu",
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal,
+                ),
               ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: newPassCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Mật khẩu mới',
-                prefixIcon: Icon(Icons.lock),
+              const SizedBox(height: 32),
+
+              buildInput(
+                controller: emailCtrl,
+                hint: 'Email',
+                icon: Icons.email_outlined,
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: confirmPassCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Xác nhận mật khẩu',
-                prefixIcon: Icon(Icons.lock_outline),
+              const SizedBox(height: 16),
+
+              buildInput(
+                controller: newPassCtrl,
+                hint: 'Mật khẩu mới',
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscure: _obscureNew,
+                toggleVisibility: () {
+                  setState(() {
+                    _obscureNew = !_obscureNew;
+                  });
+                },
               ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: isLoading ? null : resetPassword,
-              child: isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Đặt lại mật khẩu"),
-            ),
-            const SizedBox(height: 16),
-            if (message.isNotEmpty)
-              Text(
-                message,
-                style: const TextStyle(color: Colors.red),
+              const SizedBox(height: 16),
+
+              buildInput(
+                controller: confirmPassCtrl,
+                hint: 'Xác nhận mật khẩu',
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscure: _obscureConfirm,
+                toggleVisibility: () {
+                  setState(() {
+                    _obscureConfirm = !_obscureConfirm;
+                  });
+                },
               ),
-          ],
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : resetPassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                    "Đặt lại mật khẩu",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              if (message.isNotEmpty)
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                ),
+              const SizedBox(height: 24),
+
+              // Nút quay lại trang đăng nhập
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  "Quay lại đăng nhập",
+                  style: TextStyle(color: Colors.teal, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

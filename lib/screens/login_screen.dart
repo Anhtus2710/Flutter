@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'admin_dashboard.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,176 +13,155 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
-  String errorMessage = "";
   bool isLoading = false;
-  bool _obscureText = true; // nút hiện/ẩn mật khẩu
+  String errorMessage = '';
+  bool _obscureText = true;
 
   void login() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = "";
-    });
-
     final email = emailCtrl.text.trim();
     final password = passCtrl.text;
 
     if (email.isEmpty || password.isEmpty) {
       setState(() {
-        errorMessage = "Vui lòng nhập đầy đủ thông tin.";
-        isLoading = false;
+        errorMessage = 'Vui lòng nhập đầy đủ thông tin.';
       });
       return;
     }
 
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
     final res = await AuthService.login(email, password);
+    setState(() => isLoading = false);
 
     if (res['success'] == true) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(email: email),
-        ),
-      );
+      final user = res['user'];
+      final email = user['email'];
+      final username = user['username'];
+
+      if (email == 'admin@example.com') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminDashboard()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(
+              email: email,
+              username: username,
+            ),
+          ),
+        );
+      }
     } else {
       setState(() {
         errorMessage = res['message'] ?? 'Đăng nhập thất bại.';
-        isLoading = false;
       });
     }
   }
 
-  Widget neumorphicBox({required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE0E5EC),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.white,
-            offset: Offset(-6, -6),
-            blurRadius: 10,
+  Widget _buildInput({
+    required String hint,
+    required TextEditingController controller,
+    bool isPassword = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword ? _obscureText : false,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(isPassword ? Icons.lock : Icons.email),
+        suffixIcon: isPassword
+            ? IconButton(
+          icon: Icon(
+            _obscureText ? Icons.visibility_off : Icons.visibility,
           ),
-          BoxShadow(
-            color: Color(0xFFA3B1C6),
-            offset: Offset(6, 6),
-            blurRadius: 10,
-          ),
-        ],
+          onPressed: () => setState(() => _obscureText = !_obscureText),
+        )
+            : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       ),
-      child: child,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE0E5EC),
+      backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'English Quiz App',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                'Đăng nhập',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal,
+                ),
               ),
+              const SizedBox(height: 12),
               const Text(
-                'Login to continue',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                'Vui lòng nhập email và mật khẩu để tiếp tục',
+                style: TextStyle(color: Colors.black54),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              neumorphicBox(
-                child: TextField(
-                  controller: emailCtrl,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'username',
-                    prefixIcon: Icon(Icons.person_outline),
+
+              _buildInput(hint: 'Email', controller: emailCtrl),
+              const SizedBox(height: 16),
+
+              _buildInput(hint: 'Mật khẩu', controller: passCtrl, isPassword: true),
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                    'Đăng nhập',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              neumorphicBox(
-                child: TextField(
-                  controller: passCtrl,
-                  obscureText: _obscureText,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureText ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureText = !_obscureText;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: isLoading ? null : login,
-                child: Container(
-                  width: double.infinity,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[300],
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0xFFA3B1C6),
-                        offset: Offset(4, 4),
-                        blurRadius: 10,
-                      ),
-                      BoxShadow(
-                        color: Colors.white,
-                        offset: Offset(-4, -4),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                      'Login',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+
               if (errorMessage.isNotEmpty)
                 Text(
                   errorMessage,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.redAccent),
                 ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/forgot-password');
-                    },
-                    child: const Text("Forgot password?"),
+                    onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                    child: const Text('Quên mật khẩu?'),
                   ),
-                  const Text(" or "),
+                  const Text(" | "),
                   TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/register');
-                    },
-                    child: const Text("Sign Up"),
+                    onPressed: () => Navigator.pushNamed(context, '/register'),
+                    child: const Text('Đăng ký'),
                   ),
                 ],
               ),
